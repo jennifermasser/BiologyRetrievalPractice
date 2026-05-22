@@ -1,0 +1,1372 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BioQuery: PA STEELS Interactive Biology Quiz & Analytics Portal</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js for student/teacher analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        bio: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            200: '#bbf7d0',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            800: '#166534',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="h-full flex flex-col font-sans text-slate-800 antialiased">
+
+    <!-- TOP NAVIGATION BAR -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-bio-600 text-white p-2 rounded-xl shadow-md shadow-bio-200">
+                        <i class="fa-solid fa-dna text-xl animate-pulse"></i>
+                    </div>
+                    <div>
+                        <span class="font-bold text-xl tracking-tight text-slate-900">BioQuery</span>
+                        <span class="ml-1.5 px-2 py-0.5 text-xs font-semibold bg-bio-100 text-bio-800 rounded-full">PA STEELS Biology</span>
+                    </div>
+                </div>
+                
+                <!-- Active User Section -->
+                <div id="nav-user-profile" class="hidden flex items-center space-x-4">
+                    <div class="text-right hidden sm:block">
+                        <p id="user-display-name" class="text-sm font-semibold text-slate-900">Guest Student</p>
+                        <p id="user-display-role" class="text-xs text-slate-500">PA STEELS Tracker</p>
+                    </div>
+                    <button id="btn-logout" class="flex items-center space-x-1.5 text-sm font-medium text-slate-600 hover:text-red-600 transition px-3 py-2 rounded-lg hover:bg-red-50">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                        <span>Sign Out</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN INTERACTIVE CONTAINER -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- ALERT BOX FOR SYSTEM NOTIFICATIONS -->
+        <div id="system-alert" class="hidden mb-6 p-4 rounded-xl border flex items-start space-x-3 transition-all duration-300">
+            <div id="alert-icon" class="text-xl"></div>
+            <div class="flex-grow">
+                <h4 id="alert-title" class="font-semibold text-sm">Alert Title</h4>
+                <p id="alert-message" class="text-xs mt-1 text-slate-600">This is a dynamic alert message.</p>
+            </div>
+            <button onclick="hideAlert()" class="text-slate-400 hover:text-slate-600">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <!-- SECTION 1: AUTHENTICATION CONTAINER (LOGIN/SIGN UP) -->
+        <section id="auth-section" class="max-w-md mx-auto my-12 transition-all duration-300">
+            <div class="bg-white rounded-2xl shadow-xl border border-slate-100 p-8">
+                <div class="text-center mb-8">
+                    <h2 id="auth-title" class="text-2xl font-bold text-slate-900">PA STEELS Portal</h2>
+                    <p id="auth-subtitle" class="text-sm text-slate-500 mt-1">Access your high school biology progress tracker & quiz hub.</p>
+                </div>
+
+                <!-- Tabs to switch between Sign In and Sign Up -->
+                <div class="flex bg-slate-100 p-1 rounded-xl mb-6">
+                    <button id="tab-login" onclick="switchAuthTab('login')" class="flex-1 py-2 text-sm font-medium rounded-lg text-slate-800 bg-white shadow-sm transition">Sign In</button>
+                    <button id="tab-register" onclick="switchAuthTab('register')" class="flex-1 py-2 text-sm font-medium rounded-lg text-slate-500 hover:text-slate-800 transition">Create Account</button>
+                </div>
+
+                <!-- Google Sign-In Button -->
+                <button type="button" onclick="handleGoogleSignIn()" class="w-full bg-white hover:bg-slate-50 text-slate-700 font-semibold py-2.5 px-4 border border-slate-200 rounded-xl transition flex items-center justify-center space-x-2 mb-4 text-sm shadow-sm">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24">
+                        <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v3.92h6.61c-.29 1.5-.1.45-1.52 2.37l-.01.01v2.6h3.49c2.04-1.88 3.22-4.64 3.22-7.83z"/>
+                        <path fill="#34A853" d="M12 24c3.24 0 5.97-1.08 7.96-2.91l-3.49-2.6c-.97.65-2.22 1.04-3.47 1.04-2.67 0-4.94-1.8-5.75-4.22H1.14v2.69C3.12 21.39 7.24 24 12 24z"/>
+                        <path fill="#FBBC05" d="M6.25 15.31c-.21-.63-.33-1.3-.33-2s.12-1.37.33-2V8.62H1.14C.41 10.07 0 11.69 0 13.4s.41 3.33 1.14 4.78l5.11-2.87z"/>
+                        <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.24 0 3.12 2.61 1.14 6.62l5.11 2.87c.81-2.42 3.08-4.22 5.75-4.22z"/>
+                    </svg>
+                    <span>Continue with Google</span>
+                </button>
+
+                <div class="relative my-4">
+                    <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-200"></div></div>
+                    <div class="relative flex justify-center text-[10px] uppercase"><span class="bg-white px-2 text-slate-400 font-bold">Or use password sign in</span></div>
+                </div>
+
+                <form id="auth-form" onsubmit="handleAuthSubmit(event)">
+                    <!-- Name Input (Only shown on register) -->
+                    <div id="form-group-name" class="mb-4 hidden">
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Full Name</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                                <i class="fa-solid fa-user"></i>
+                            </span>
+                            <input id="auth-name" type="text" class="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-bio-500 focus:border-bio-500 text-sm" placeholder="Alex Smith">
+                        </div>
+                    </div>
+
+                    <!-- Email Input -->
+                    <div class="mb-4">
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">School Email</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                                <i class="fa-solid fa-envelope"></i>
+                            </span>
+                            <input id="auth-email" type="email" required class="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-bio-500 focus:border-bio-500 text-sm" placeholder="yourname@school.edu">
+                        </div>
+                    </div>
+
+                    <!-- Password Input -->
+                    <div class="mb-5">
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Password</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                                <i class="fa-solid fa-lock"></i>
+                            </span>
+                            <input id="auth-password" type="password" required class="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-bio-500 focus:border-bio-500 text-sm" placeholder="••••••••">
+                        </div>
+                    </div>
+
+                    <!-- Role Selection (Only shown on register) -->
+                    <div id="form-group-role" class="mb-6 hidden">
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Account Type</label>
+                        <div class="grid grid-cols-2 gap-3">
+                            <label class="border-2 border-slate-200 rounded-xl p-3 flex items-center justify-between cursor-pointer hover:border-bio-500 transition" id="label-role-student">
+                                <span class="text-sm font-semibold">Student</span>
+                                <input type="radio" name="auth-role" value="student" checked class="text-bio-600 focus:ring-bio-500" onclick="updateRoleUI('student')">
+                            </label>
+                            <label class="border-2 border-slate-200 rounded-xl p-3 flex items-center justify-between cursor-pointer hover:border-bio-500 transition" id="label-role-teacher">
+                                <span class="text-sm font-semibold">Teacher</span>
+                                <input type="radio" name="auth-role" value="teacher" class="text-bio-600 focus:ring-bio-500" onclick="updateRoleUI('teacher')">
+                            </label>
+                        </div>
+                    </div>
+
+                    <button id="btn-auth-submit" type="submit" class="w-full bg-bio-600 hover:bg-bio-700 text-white font-semibold py-3 rounded-xl transition shadow-lg shadow-bio-100 flex items-center justify-center space-x-2">
+                        <span>Sign In</span>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </form>
+
+                <div class="relative my-6">
+                    <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-200"></div></div>
+                    <div class="relative flex justify-center text-xs uppercase"><span class="bg-white px-2 text-slate-400 font-semibold">Quick Classroom Access</span></div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="demoLogin('student')" class="py-2.5 px-4 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 transition flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-graduation-cap text-bio-600"></i>
+                        <span>Demo Student</span>
+                    </button>
+                    <button onclick="demoLogin('teacher')" class="py-2.5 px-4 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 transition flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-chalkboard-user text-purple-600"></i>
+                        <span>Demo Teacher</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 2: STUDENT PORTAL (QUIZ HUB + INDIVIDUAL PROGRESS) -->
+        <section id="student-section" class="hidden space-y-8 transition-all duration-300">
+            <!-- Header greeting -->
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-900">Welcome back, <span id="student-name-header">Student</span>!</h2>
+                    <p class="text-sm text-slate-500 mt-1">Monitor your PA STEELS achievement standards across Modules and Domains.</p>
+                </div>
+                <button onclick="openQuizConfig()" class="bg-bio-600 hover:bg-bio-700 text-white font-bold px-6 py-3 rounded-xl transition shadow-lg shadow-bio-100 flex items-center space-x-2">
+                    <i class="fa-solid fa-play"></i>
+                    <span>Start Practice Quiz</span>
+                </button>
+            </div>
+
+            <!-- Dashboard Analytics grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Analytics Chart -->
+                <div class="lg:col-span-2 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                    <h3 class="font-bold text-lg text-slate-900 mb-4 flex items-center space-x-2">
+                        <i class="fa-solid fa-chart-line text-bio-500"></i>
+                        <span>Performance Progression Over Time</span>
+                    </h3>
+                    <div class="h-64 relative">
+                        <canvas id="studentProgressionChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Topic Mastery Breakdown by Module & Domain -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                    <div>
+                        <h3 class="font-bold text-lg text-slate-900 mb-3 flex items-center space-x-2">
+                            <i class="fa-solid fa-bullseye text-red-500"></i>
+                            <span>STEELS Module Mastery</span>
+                        </h3>
+                        <p class="text-xs text-slate-400 mb-4">Mastery status aggregated by the 2 official curriculum modules.</p>
+                        
+                        <div id="student-mastery-list" class="space-y-4">
+                            <!-- Populated dynamically by STEELS modules -->
+                        </div>
+                    </div>
+                    <div class="pt-4 border-t border-slate-100 mt-4 text-center">
+                        <span class="text-[11px] text-slate-400">Alignment: 3 Domains per Module.</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detailed Standards Progress Checklist -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                <h3 class="font-bold text-lg text-slate-900 mb-4 flex items-center space-x-2">
+                    <i class="fa-solid fa-list-check text-bio-600"></i>
+                    <span>Detailed Standard Performance Tracker (Domains A-X)</span>
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="standards-progress-grid">
+                    <!-- Populated dynamically with STEELS items -->
+                </div>
+            </div>
+
+            <!-- Previous Attempts List -->
+            <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+                <div class="p-6 border-b border-slate-200 flex justify-between items-center">
+                    <h3 class="font-bold text-lg text-slate-900 flex items-center space-x-2">
+                        <i class="fa-solid fa-history text-indigo-500"></i>
+                        <span>Quiz History Log</span>
+                    </h3>
+                    <span id="quiz-attempt-count" class="px-2.5 py-1 text-xs font-semibold bg-indigo-50 text-indigo-700 rounded-full">0 Completed</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-200 text-xs font-bold uppercase text-slate-500 tracking-wider">
+                                <th class="p-4">Quiz Date</th>
+                                <th class="p-4">Standards Tested</th>
+                                <th class="p-4 text-center">Correct / Total</th>
+                                <th class="p-4 text-right">Final Accuracy</th>
+                            </tr>
+                        </thead>
+                        <tbody id="student-history-tbody">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 3: TEACHER MANAGEMENT CONSOLE -->
+        <section id="teacher-section" class="hidden space-y-8 transition-all duration-300">
+            <!-- Header greeting -->
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-900">Teacher Management Console</h2>
+                    <p class="text-sm text-slate-500 mt-1">Assess PA STEELS standards across 6 reporting domains, configure quizzes, and review comprehensive student learning metrics.</p>
+                </div>
+                <div class="flex space-x-2">
+                    <button onclick="switchTeacherTab('questions')" id="tab-btn-questions" class="px-4 py-2 text-sm font-semibold rounded-lg bg-bio-600 text-white shadow transition">
+                        Manage Questions
+                    </button>
+                    <button onclick="switchTeacherTab('analytics')" id="tab-btn-analytics" class="px-4 py-2 text-sm font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition">
+                        Classroom Analytics
+                    </button>
+                </div>
+            </div>
+
+            <!-- TEACHER VIEW: QUESTIONS ENGINE -->
+            <div id="teacher-questions-view" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Add Question Form -->
+                <div class="lg:col-span-1 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm h-fit">
+                    <h3 class="font-bold text-lg text-slate-900 mb-2 flex items-center space-x-2">
+                        <i class="fa-solid fa-plus-circle text-bio-600"></i>
+                        <span>Add New Question</span>
+                    </h3>
+                    <p class="text-xs text-slate-400 mb-4">Choose a PA STEELS standard from A to X (categorized by Module & Domain).</p>
+                    
+                    <form onsubmit="handleNewQuestionSubmit(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">STEELS Code / Assessment Standard</label>
+                            <select id="q-add-tag" required onchange="updateSelectedStandardDescription()" class="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs focus:ring-2 focus:ring-bio-500">
+                                <!-- Populated dynamically by javascript using STEELS_REGISTRY -->
+                            </select>
+                        </div>
+
+                        <!-- Full Standard expectation reader box -->
+                        <div class="p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs" id="selected-standard-desc-box">
+                            <span class="font-bold text-slate-700 block text-[10px] uppercase">Module / Domain / expectation:</span>
+                            <span id="selected-standard-desc-text" class="text-slate-500">Select a standard above.</span>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Question Content</label>
+                            <textarea id="q-add-text" rows="3" required class="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:ring-2 focus:ring-bio-500" placeholder="e.g., Which of the following best describes the core product of transcription?"></textarea>
+                        </div>
+                        
+                        <div class="space-y-2">
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Answer Options</label>
+                            
+                            <div class="flex items-center space-x-2">
+                                <input type="radio" name="correct-option" value="0" checked class="text-bio-600">
+                                <input id="q-option-0" type="text" required class="flex-grow px-3 py-1.5 rounded-lg border border-slate-200 text-xs" placeholder="Option A (Correct)">
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <input type="radio" name="correct-option" value="1" class="text-bio-600">
+                                <input id="q-option-1" type="text" required class="flex-grow px-3 py-1.5 rounded-lg border border-slate-200 text-xs" placeholder="Option B">
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <input type="radio" name="correct-option" value="2" class="text-bio-600">
+                                <input id="q-option-2" type="text" required class="flex-grow px-3 py-1.5 rounded-lg border border-slate-200 text-xs" placeholder="Option C">
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <input type="radio" name="correct-option" value="3" class="text-bio-600">
+                                <input id="q-option-3" type="text" required class="flex-grow px-3 py-1.5 rounded-lg border border-slate-200 text-xs" placeholder="Option D">
+                            </div>
+                        </div>
+                        
+                        <p class="text-[11px] text-slate-400"><i class="fa-solid fa-circle-info mr-1"></i>Mark the correct option's bubble on the left.</p>
+
+                        <button type="submit" class="w-full bg-bio-600 hover:bg-bio-700 text-white font-bold py-2.5 rounded-lg transition text-sm">
+                            Add Question to Pool
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Existing Question Pool -->
+                <div class="lg:col-span-2 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold text-lg text-slate-900 flex items-center space-x-2">
+                            <i class="fa-solid fa-database text-purple-600"></i>
+                            <span>STEELS Biology Question Bank</span>
+                        </h3>
+                        <span id="question-bank-count" class="px-2.5 py-1 text-xs font-semibold bg-purple-100 text-purple-800 rounded-full">0 Questions</span>
+                    </div>
+
+                    <div class="space-y-4 max-h-[550px] overflow-y-auto pr-2" id="teacher-question-list">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- TEACHER VIEW: CLASSROOM ANALYTICS -->
+            <div id="teacher-analytics-view" class="hidden space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm text-center">
+                        <p class="text-xs uppercase font-bold tracking-wider text-slate-400">Total Registered Students</p>
+                        <h4 id="metric-student-count" class="text-4xl font-extrabold text-bio-600 mt-2">0</h4>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm text-center">
+                        <p class="text-xs uppercase font-bold tracking-wider text-slate-400">Total Tests Taken</p>
+                        <h4 id="metric-quiz-count" class="text-4xl font-extrabold text-indigo-600 mt-2">0</h4>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm text-center">
+                        <p class="text-xs uppercase font-bold tracking-wider text-slate-400">Average Class Accuracy</p>
+                        <h4 id="metric-avg-score" class="text-4xl font-extrabold text-amber-500 mt-2">0%</h4>
+                    </div>
+                </div>
+
+                <!-- Student tracking matrix organized by Module & Domain -->
+                <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+                    <div class="p-6 border-b border-slate-200">
+                        <h3 class="font-bold text-lg text-slate-900">Student Achievement Standards Matrix (PA STEELS Modules)</h3>
+                        <p class="text-xs text-slate-400 mt-1">Average proficiency structured by Modules A & B across all 6 reporting domains.</p>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse min-w-[800px]">
+                            <thead>
+                                <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase text-slate-500 tracking-wider">
+                                    <th class="p-4 rowspan=2">Student Name</th>
+                                    <th class="p-4 text-center bg-green-50/50" colspan="3">Module A Domains</th>
+                                    <th class="p-4 text-center bg-blue-50/50" colspan="3">Module B Domains</th>
+                                    <th class="p-4 text-right">Avg Score</th>
+                                </tr>
+                                <tr class="bg-slate-100/50 border-b border-slate-200 text-[9px] font-bold text-slate-500">
+                                    <th class="p-2 text-center">Domain 1<br><span class="text-[8px] font-normal text-slate-400">Structure & Function</span></th>
+                                    <th class="p-2 text-center">Domain 2<br><span class="text-[8px] font-normal text-slate-400">Matter & Energy</span></th>
+                                    <th class="p-2 text-center">Domain 3<br><span class="text-[8px] font-normal text-slate-400">Ecosystem Interdependency</span></th>
+                                    <th class="p-2 text-center">Domain 1<br><span class="text-[8px] font-normal text-slate-400">Inheritance of Traits</span></th>
+                                    <th class="p-2 text-center">Domain 2<br><span class="text-[8px] font-normal text-slate-400">Variation of Traits</span></th>
+                                    <th class="p-2 text-center">Domain 3<br><span class="text-[8px] font-normal text-slate-400">Selection & Evolution</span></th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="classroom-matrix-tbody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FLOATING QUIZ MODAL (POPUP SYSTEM FOR ACTIVE QUIZ SESSION) -->
+    <div id="quiz-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <!-- Configuration State -->
+        <div id="quiz-config-container" class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-100 p-6 space-y-6 transition-transform scale-95 duration-300">
+            <div class="flex justify-between items-center pb-4 border-b border-slate-100">
+                <h3 class="text-xl font-bold text-slate-900">Set Up Your Practice Quiz</h3>
+                <button onclick="closeQuizModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Select STEELS Categories to Test</label>
+                    <div class="space-y-2 max-h-48 overflow-y-auto pr-1" id="quiz-tag-checkboxes">
+                        <!-- Populated by JS based on active question pool tags -->
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Number of Questions</label>
+                    <select id="quiz-limit" class="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm">
+                        <option value="5">5 Questions</option>
+                        <option value="10" selected>10 Questions</option>
+                        <option value="15">15 Questions</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="flex justify-end space-x-3 pt-4 border-t border-slate-100">
+                <button onclick="closeQuizModal()" class="px-4 py-2 border border-slate-200 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-50">Cancel</button>
+                <button onclick="initiateQuiz()" class="px-5 py-2 bg-bio-600 hover:bg-bio-700 text-white rounded-lg text-sm font-semibold shadow shadow-bio-100">Start Quiz</button>
+            </div>
+        </div>
+
+        <!-- Gameplay State -->
+        <div id="quiz-gameplay-container" class="hidden bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden border border-slate-100 transition-transform scale-95 duration-300 flex flex-col max-h-[90vh]">
+            <!-- Progress Bar -->
+            <div class="w-full bg-slate-100 h-1.5">
+                <div id="quiz-progressbar" class="bg-bio-500 h-full w-0 transition-all duration-300"></div>
+            </div>
+
+            <div class="p-6 flex justify-between items-center border-b border-slate-100">
+                <span id="quiz-counter" class="text-xs font-bold text-slate-400 uppercase tracking-wider">Question 1 of 10</span>
+                <span id="quiz-tag-badge" class="px-2.5 py-1 text-xs font-semibold bg-bio-100 text-bio-800 rounded-full">Tag Label</span>
+            </div>
+
+            <!-- Content Area -->
+            <div class="p-8 space-y-6 overflow-y-auto flex-grow">
+                <h4 id="quiz-question-text" class="text-lg font-bold text-slate-900 leading-relaxed">Wait, loading question...</h4>
+                
+                <div id="quiz-options-container" class="space-y-3">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+            <!-- Footer Action Bar -->
+            <div class="p-6 bg-slate-50 border-t border-slate-100 flex justify-between items-center">
+                <button onclick="abortQuiz()" class="text-xs font-bold text-red-500 hover:text-red-700 uppercase tracking-wide">End Attempt</button>
+                <button id="btn-quiz-next" disabled onclick="advanceQuiz()" class="px-5 py-2.5 bg-bio-600 text-white rounded-xl text-sm font-bold opacity-50 cursor-not-allowed transition flex items-center space-x-2">
+                    <span>Next Question</span>
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Scoring/Review State -->
+        <div id="quiz-results-container" class="hidden bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-100 p-8 space-y-6 text-center transition-transform scale-95 duration-300">
+            <div class="mx-auto w-20 h-20 bg-bio-100 text-bio-600 rounded-full flex items-center justify-center text-4xl mb-4">
+                <i class="fa-solid fa-trophy"></i>
+            </div>
+            
+            <div>
+                <h3 class="text-2xl font-black text-slate-900">Quiz Completed!</h3>
+                <p class="text-slate-500 text-sm mt-1">Excellent work tracking your STEELS progress metrics.</p>
+            </div>
+
+            <div class="bg-slate-50 p-6 rounded-2xl border border-slate-100 grid grid-cols-2 gap-4">
+                <div>
+                    <span class="text-xs text-slate-400 uppercase font-bold tracking-wider">Your Score</span>
+                    <h4 id="result-score" class="text-3xl font-extrabold text-slate-900 mt-1">0 / 0</h4>
+                </div>
+                <div>
+                    <span class="text-xs text-slate-400 uppercase font-bold tracking-wider">Accuracy</span>
+                    <h4 id="result-accuracy" class="text-3xl font-extrabold text-bio-600 mt-1">0%</h4>
+                </div>
+            </div>
+
+            <div id="result-breakdown-box" class="text-left space-y-3 max-h-40 overflow-y-auto">
+                <h5 class="text-xs font-bold uppercase text-slate-400 tracking-wider">Topic Performance</h5>
+                <div id="result-topic-list" class="space-y-2">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+
+            <div class="pt-4 border-t border-slate-100">
+                <button onclick="finishQuizSession()" class="w-full bg-bio-600 hover:bg-bio-700 text-white font-bold py-3 rounded-xl transition shadow shadow-bio-100">
+                    Return to Dashboard
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CLEAN FOOTER -->
+    <footer class="bg-slate-900 text-slate-400 py-8 border-t border-slate-800 text-center text-xs mt-12">
+        <p>&copy; 2026 BioQuery Suite. Aligned to PA STEELS Standards for Secondary Life Sciences education.</p>
+    </footer>
+
+    <!-- SDK IMPORTS FOR FIREBASE INTEGRATION -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, collection, addDoc, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // === REPLACE THE PLACEHOLDER STRINGS BELOW WITH YOUR FIREBASE APP CONFIG STRINGS ===
+        const firebaseConfig = {
+            apiKey: "",
+            authDomain: "",
+            projectId: "",
+            storageBucket: "",
+            messagingSenderId: "",
+            appId: ""
+        };
+
+        // Initialize Firebase
+        let app, auth, db;
+        let firebaseConnected = false;
+
+        if (firebaseConfig.apiKey && firebaseConfig.projectId) {
+            try {
+                app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+                firebaseConnected = true;
+                console.log("Firebase database connected successfully!");
+            } catch (error) {
+                console.warn("Could not connect with current Firebase settings. Falling back to sandbox database mock logic.", error);
+            }
+        }
+
+        // --- GOOGLE SIGN-IN INTERACTION FOR CLASSROOMS ---
+        window.handleGoogleSignIn = async () => {
+            if (firebaseConnected) {
+                const provider = new GoogleAuthProvider();
+                try {
+                    const result = await signInWithPopup(auth, provider);
+                    const user = result.user;
+                    
+                    currentUser = {
+                        uid: user.uid,
+                        email: user.email,
+                        displayName: user.displayName || user.email.split('@')[0],
+                        role: 'student'
+                    };
+                    
+                    try {
+                        const userDoc = await getDoc(doc(db, "users", user.uid));
+                        if (userDoc.exists()) {
+                            currentUser.role = userDoc.data().role || 'student';
+                        } else {
+                            await setDoc(doc(db, "users", user.uid), {
+                                displayName: currentUser.displayName,
+                                email: currentUser.email,
+                                role: 'student'
+                            });
+                        }
+                    } catch (err) {
+                        console.warn("Firestore role check bypassed. Defaulting to standard Student profile.", err);
+                    }
+
+                    showAlert('success', 'Logged in with Google', `Welcome back, ${currentUser.displayName}!`);
+                    completeSignOn();
+                } catch (error) {
+                    console.error("Google Authentication Error:", error);
+                    showAlert('error', 'Google Sign-In Failed', 'Make sure Google Popups are enabled or check your Firebase OAuth settings.');
+                }
+            } else {
+                currentUser = {
+                    uid: "google_sim_" + Math.floor(Math.random() * 100000),
+                    email: "googlestudent@school.edu",
+                    displayName: "Google User (Simulated)",
+                    role: 'student'
+                };
+                showAlert('success', 'Logged in (Simulated Google Auth)', `Welcome, ${currentUser.displayName}! Running in sandbox mode.`);
+                completeSignOn();
+            }
+        };
+    </script>
+
+    <!-- CORE INTERACTION JAVASCRIPT -->
+    <script>
+        // --- MASTER PA STEELS REGISTRY (Modules A & B with 3 Domains Each) ---
+        const STEELS_REGISTRY = {
+            // MODULE A: Molecules to Organisms
+            "3.1.9-12.A": { module: "Module A", domain: "Domain 1: Structure & Function", desc: "DNA determines the structure of proteins (HS-LS1-1)" },
+            "3.1.9-12.B": { module: "Module A", domain: "Domain 1: Structure & Function", desc: "Hierarchical organization of interacting systems (HS-LS1-2)" },
+            "3.1.9-12.C": { module: "Module A", domain: "Domain 1: Structure & Function", desc: "Feedback mechanisms maintain homeostasis (HS-LS1-3)" },
+            "3.1.9-12.D": { module: "Module A", domain: "Domain 1: Structure & Function", desc: "Cellular division and differentiation (HS-LS1-4)" },
+            
+            "3.1.9-12.E": { module: "Module A", domain: "Domain 2: Matter & Energy", desc: "Photosynthesis transforms light into chemical energy (HS-LS1-5)" },
+            "3.1.9-12.F": { module: "Module A", domain: "Domain 2: Matter & Energy", desc: "Carbon-based molecules combine with other elements (HS-LS1-6)" },
+            "3.1.9-12.G": { module: "Module A", domain: "Domain 2: Matter & Energy", desc: "Cellular respiration chemical net energy transfer (HS-LS1-7)" },
+            "3.1.9-12.H": { module: "Module A", domain: "Domain 2: Matter & Energy", desc: "Cycle of matter & energy flow in ecosystems (HS-LS2-3)" },
+            "3.1.9-12.J": { module: "Module A", domain: "Domain 2: Matter & Energy", desc: "Photosynthesis & respiration in carbon cycle (HS-LS2-5)" },
+            "3.1.9-12.K": { module: "Module A", domain: "Domain 2: Matter & Energy", desc: "Biomass trophic levels net transfer (HS-LS2-4)" },
+            
+            "3.1.9-12.L": { module: "Module A", domain: "Domain 3: Ecosystem Interdependency", desc: "Ecosystem carrying capacity limits (HS-LS2-1)" },
+            "3.1.9-12.M": { module: "Module A", domain: "Domain 3: Ecosystem Interdependency", desc: "Ecosystem scales, population, & biodiversity (HS-LS2-2)" },
+            "3.1.9-12.N": { module: "Module A", domain: "Domain 3: Ecosystem Interdependency", desc: "Ecosystem dynamics, stability, & resilience (HS-LS2-6)" },
+            "3.1.9-12.P": { module: "Module A", domain: "Domain 3: Ecosystem Interdependency", desc: "Group behaviors survival and reproduction rates (HS-LS2-8)" },
+            "3.1.9-12.V": { module: "Module A", domain: "Domain 3: Ecosystem Interdependency", desc: "Human impact mitigation on biodiversity (HS-LS4-6)" },
+            
+            // MODULE B: Heredity and Evolutionary Dynamics
+            "3.1.9-12.Q": { module: "Module B", domain: "Domain 1: Inheritance of Traits", desc: "Chromosomes role & genetic coding in proteins (HS-LS3-1)" },
+            
+            "3.1.9-12.R": { module: "Module B", domain: "Domain 2: Variation of Traits", desc: "Sources of inheritable genetic variation (HS-LS3-2)" },
+            
+            "3.1.9-12.S": { module: "Module B", domain: "Domain 3: Selection & Evolution", desc: "Empirical evidence of common biological ancestry (HS-LS4-1)" },
+            "3.1.9-12.T": { module: "Module B", domain: "Domain 3: Selection & Evolution", desc: "Four factor metrics driving evolution (HS-LS4-2)" },
+            "3.1.9-12.U": { module: "Module B", domain: "Domain 3: Selection & Evolution", desc: "Advantageous heritable trait statistics (HS-LS4-3)" },
+            "3.1.9-12.W": { module: "Module B", domain: "Domain 3: Selection & Evolution", desc: "Natural selection leads to population adaptations (HS-LS4-4)" },
+            "3.1.9-12.X": { module: "Module B", domain: "Domain 3: Selection & Evolution", desc: "Environmental shifts vs speciation/extinction rates (HS-LS4-5)" }
+        };
+
+        // --- PA STEELS SEED/DEFAULT CURRICULUM QUESTIONS ---
+        const defaultQuestions = [
+            {
+                id: "q_01",
+                text: "Which cell organelle reads genetic blueprints and constructs protein fibers to support key biological operations?",
+                options: ["Ribosome", "Mitochondria", "Lysosome", "Centrosome"],
+                correctIndex: 0,
+                tag: "3.1.9-12.A"
+            },
+            {
+                id: "q_02",
+                text: "During cellular division (mitosis), which phase involves the alignment of duplicated chromosomes along the metaphase plate?",
+                options: ["Metaphase", "Prophase", "Anaphase", "Telophase"],
+                correctIndex: 0,
+                tag: "3.1.9-12.D"
+            },
+            {
+                id: "q_03",
+                text: "Which molecule acts as the initial electron donor in light-dependent photosynthetic systems to store solar energy?",
+                options: ["Water (H2O)", "Carbon dioxide (CO2)", "Glucose (C6H12O6)", "Oxygen (O2)"],
+                correctIndex: 0,
+                tag: "3.1.9-12.E"
+            },
+            {
+                id: "q_04",
+                text: "How does energy transfer operate during cellular respiration when macro-molecules are metabolized?",
+                options: ["Chemical potential energy transfers out as metabolic bonds rearrange", "Heat gets completely destroyed", "Oxygen absorbs the whole molecular mass", "Carbon synthesizes into immediate solar rays"],
+                correctIndex: 0,
+                tag: "3.1.9-12.G"
+            },
+            {
+                id: "q_05",
+                text: "Which compound replaces thymine during transcription to build messenger RNA strands?",
+                options: ["Uracil", "Adenine", "Cytosine", "Guanine"],
+                correctIndex: 0,
+                tag: "3.1.9-12.Q"
+            },
+            {
+                id: "q_06",
+                text: "Which genetic factor determines standard Mendelian phenotypic distributions in crossing independent heterozygous traits?",
+                options: ["Allelic segregation and random recombination during fertilization", "Uniform chromosomal mutation during synthesis", "Environmental conditioning altering cellular tissue directly", "Horizontal gene sharing in eukaryotic somatic cells"],
+                correctIndex: 0,
+                tag: "3.1.9-12.R"
+            },
+            {
+                id: "q_07",
+                text: "How does natural selection drive evolutionary shifts and advantageous heritable trait distribution in populations?",
+                options: ["Organisms possessing adaptive traits survive and pass on genomic configurations", "Individual organisms choose to rewrite genetic chains in somatic cells", "Clones duplicate exponentially without genetic mutations", "The environment creates target traits directly within species cells"],
+                correctIndex: 0,
+                tag: "3.1.9-12.W"
+            },
+            {
+                id: "q_08",
+                text: "Which ecosystem dynamic represents standard carrying capacity boundaries on populations?",
+                options: ["Resource bounds such as available shelter, nutrients, and water limits", "Predatory relationships eliminating trophic levels altogether", "Sudden thermal changes vaporizing the local atmosphere", "Interspecific partnerships shifting landscape scales instantly"],
+                correctIndex: 0,
+                tag: "3.1.9-12.L"
+            }
+        ];
+
+        // --- GLOBAL APP STATE ---
+        let currentUser = null;
+        let activeQuestions = [...defaultQuestions];
+        
+        let quizHistory = [
+            { date: "2026-05-18", tags: ["3.1.9-12.A", "3.1.9-12.D"], correct: 4, total: 5 },
+            { date: "2026-05-20", tags: ["3.1.9-12.E", "3.1.9-12.Q", "3.1.9-12.R"], correct: 8, total: 10 }
+        ];
+        
+        // PA STEELS Modules Average stats matching Module A (Domains 1, 2, 3) and Module B (Domains 1, 2, 3)
+        let classroomStats = [
+            { name: "Alex Smith", m1d1: "95%", m1d2: "80%", m1d3: "88%", m2d1: "100%", m2d2: "90%", m2d3: "85%", avg: 90 },
+            { name: "Jordan Lee", m1d1: "100%", m1d2: "70%", m1d3: "72%", m2d1: "80%", m2d2: "75%", m2d3: "90%", avg: 81 },
+            { name: "Taylor Vance", m1d1: "85%", m1d2: "90%", m1d3: "95%", m2d1: "N/A", m2d2: "95%", m2d3: "95%", avg: 92 }
+        ];
+
+        // Active Quiz State
+        let currentQuizQuestions = [];
+        let currentQuizIndex = 0;
+        let currentAnswers = []; 
+        let selectedOptionIndex = null;
+        let performanceChartInstance = null;
+
+        // On Load initialization
+        window.addEventListener('DOMContentLoaded', () => {
+            loadLocalQuestionBank();
+            populateSTEELSSelectionList();
+            updateAllVisuals();
+        });
+
+        // --- DYNAMICALLY CONSTRUCT STEELS DROPDOWNS ---
+        function populateSTEELSSelectionList() {
+            const selectEl = document.getElementById('q-add-tag');
+            selectEl.innerHTML = '';
+
+            // Group standards by Module/Domain
+            const groups = {};
+            Object.entries(STEELS_REGISTRY).forEach(([code, value]) => {
+                const groupName = `${value.module} - ${value.domain}`;
+                if (!groups[groupName]) {
+                    groups[groupName] = [];
+                }
+                groups[groupName].push({ code, ...value });
+            });
+
+            Object.entries(groups).forEach(([groupName, standards]) => {
+                const optGroup = document.createElement('optgroup');
+                optGroup.label = groupName;
+                standards.forEach(std => {
+                    const option = document.createElement('option');
+                    option.value = std.code;
+                    option.textContent = `${std.code}`;
+                    optGroup.appendChild(option);
+                });
+                selectEl.appendChild(optGroup);
+            });
+
+            updateSelectedStandardDescription();
+        }
+
+        function updateSelectedStandardDescription() {
+            const selectedCode = document.getElementById('q-add-tag').value;
+            const textEl = document.getElementById('selected-standard-desc-text');
+            if (STEELS_REGISTRY[selectedCode]) {
+                const item = STEELS_REGISTRY[selectedCode];
+                textEl.textContent = `[${item.module} - ${item.domain}]: ${item.desc}`;
+            }
+        }
+
+        // --- UTILITY ACTION NOTIFICATION SYSTEM ---
+        function showAlert(type, title, message) {
+            const alertBox = document.getElementById('system-alert');
+            const alertIcon = document.getElementById('alert-icon');
+            const alertTitle = document.getElementById('alert-title');
+            const alertMessage = document.getElementById('alert-message');
+
+            alertBox.className = "mb-6 p-4 rounded-xl border flex items-start space-x-3 transition-all duration-300 shadow-sm";
+            
+            if (type === 'success') {
+                alertBox.classList.add('bg-green-50', 'border-green-200', 'text-green-800');
+                alertIcon.innerHTML = '<i class="fa-solid fa-circle-check text-green-600"></i>';
+            } else if (type === 'error') {
+                alertBox.classList.add('bg-red-50', 'border-red-200', 'text-red-800');
+                alertIcon.innerHTML = '<i class="fa-solid fa-circle-exclamation text-red-600"></i>';
+            } else {
+                alertBox.classList.add('bg-blue-50', 'border-blue-200', 'text-blue-800');
+                alertIcon.innerHTML = '<i class="fa-solid fa-circle-info text-blue-600"></i>';
+            }
+
+            alertTitle.textContent = title;
+            alertMessage.textContent = message;
+            alertBox.classList.remove('hidden');
+            
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function hideAlert() {
+            document.getElementById('system-alert').classList.add('hidden');
+        }
+
+        // --- AUTHENTICATION INTERFACES AND EVENT HANDLERS ---
+        let currentAuthMode = 'login';
+        
+        function switchAuthTab(mode) {
+            currentAuthMode = mode;
+            const tabLogin = document.getElementById('tab-login');
+            const tabRegister = document.getElementById('tab-register');
+            const nameField = document.getElementById('form-group-name');
+            const roleField = document.getElementById('form-group-role');
+            const btnSubmitText = document.getElementById('btn-auth-submit').querySelector('span');
+
+            if (mode === 'login') {
+                tabLogin.className = "flex-1 py-2 text-sm font-medium rounded-lg text-slate-800 bg-white shadow-sm transition";
+                tabRegister.className = "flex-1 py-2 text-sm font-medium rounded-lg text-slate-500 hover:text-slate-800 transition";
+                nameField.classList.add('hidden');
+                roleField.classList.add('hidden');
+                btnSubmitText.textContent = "Sign In";
+                document.getElementById('auth-title').textContent = "PA STEELS Portal";
+                document.getElementById('auth-subtitle').textContent = "Access your biology progress tracker & quiz hub.";
+            } else {
+                tabRegister.className = "flex-1 py-2 text-sm font-medium rounded-lg text-slate-800 bg-white shadow-sm transition";
+                tabLogin.className = "flex-1 py-2 text-sm font-medium rounded-lg text-slate-500 hover:text-slate-800 transition";
+                nameField.classList.remove('hidden');
+                roleField.classList.remove('hidden');
+                btnSubmitText.textContent = "Create Account";
+                document.getElementById('auth-title').textContent = "Create Classroom Account";
+                document.getElementById('auth-subtitle').textContent = "Join the class to review PA biology standards.";
+            }
+        }
+
+        function updateRoleUI(role) {
+            const studentLabel = document.getElementById('label-role-student');
+            const teacherLabel = document.getElementById('label-role-teacher');
+            if (role === 'student') {
+                studentLabel.className = "border-2 border-bio-500 rounded-xl p-3 flex items-center justify-between cursor-pointer transition";
+                teacherLabel.className = "border-2 border-slate-200 rounded-xl p-3 flex items-center justify-between cursor-pointer hover:border-bio-500 transition";
+            } else {
+                teacherLabel.className = "border-2 border-purple-500 rounded-xl p-3 flex items-center justify-between cursor-pointer transition";
+                studentLabel.className = "border-2 border-slate-200 rounded-xl p-3 flex items-center justify-between cursor-pointer hover:border-bio-500 transition";
+            }
+        }
+
+        function handleAuthSubmit(event) {
+            event.preventDefault();
+            const email = document.getElementById('auth-email').value;
+            const password = document.getElementById('auth-password').value;
+            const name = document.getElementById('auth-name').value || "Class Member";
+            const selectedRoleElement = document.querySelector('input[name="auth-role"]:checked');
+            const role = selectedRoleElement ? selectedRoleElement.value : 'student';
+
+            currentUser = {
+                uid: "user_" + Math.floor(Math.random() * 100000),
+                email: email,
+                displayName: currentAuthMode === 'login' ? email.split('@')[0] : name,
+                role: role
+            };
+
+            showAlert('success', 'Authenticated Successfully (Sandbox)', `Welcome, ${currentUser.displayName}! Connected via sandbox simulation.`);
+            completeSignOn();
+        }
+
+        function demoLogin(role) {
+            currentUser = {
+                uid: role === 'teacher' ? "teacher_demo" : "student_demo",
+                email: role === 'teacher' ? "teacher@pa-schools.org" : "student@pa-schools.org",
+                displayName: role === 'teacher' ? "Mrs. Albright" : "Taylor Vance",
+                role: role
+            };
+            showAlert('success', 'Logged in as Demo Profile', `Viewing portal as: ${role.toUpperCase()}`);
+            completeSignOn();
+        }
+
+        function completeSignOn() {
+            document.getElementById('auth-section').classList.add('hidden');
+            document.getElementById('nav-user-profile').classList.remove('hidden');
+            document.getElementById('user-display-name').textContent = currentUser.displayName;
+            document.getElementById('user-display-role').textContent = currentUser.role.toUpperCase();
+
+            if (currentUser.role === 'teacher') {
+                document.getElementById('teacher-section').classList.remove('hidden');
+                document.getElementById('student-section').classList.add('hidden');
+                switchTeacherTab('questions');
+            } else {
+                document.getElementById('student-section').classList.remove('hidden');
+                document.getElementById('teacher-section').classList.add('hidden');
+                document.getElementById('student-name-header').textContent = currentUser.displayName;
+                initializeStudentAnalytics();
+            }
+            updateAllVisuals();
+        }
+
+        // Logout
+        document.getElementById('btn-logout').addEventListener('click', () => {
+            currentUser = null;
+            document.getElementById('nav-user-profile').classList.add('hidden');
+            document.getElementById('student-section').classList.add('hidden');
+            document.getElementById('teacher-section').classList.add('hidden');
+            document.getElementById('auth-section').classList.remove('hidden');
+            showAlert('info', 'Logged Out', 'You have been safely signed out.');
+        });
+
+        // --- TEACHER TAB CONTROLLER ---
+        let currentTeacherTab = 'questions';
+        function switchTeacherTab(tab) {
+            currentTeacherTab = tab;
+            const btnQuestions = document.getElementById('tab-btn-questions');
+            const btnAnalytics = document.getElementById('tab-btn-analytics');
+            const viewQuestions = document.getElementById('teacher-questions-view');
+            const viewAnalytics = document.getElementById('teacher-analytics-view');
+
+            if (tab === 'questions') {
+                btnQuestions.className = "px-4 py-2 text-sm font-semibold rounded-lg bg-bio-600 text-white shadow transition";
+                btnAnalytics.className = "px-4 py-2 text-sm font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition";
+                viewQuestions.classList.remove('hidden');
+                viewAnalytics.classList.add('hidden');
+            } else {
+                btnAnalytics.className = "px-4 py-2 text-sm font-semibold rounded-lg bg-bio-600 text-white shadow transition";
+                btnQuestions.className = "px-4 py-2 text-sm font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition";
+                viewAnalytics.classList.remove('hidden');
+                viewQuestions.classList.add('hidden');
+                populateClassroomAnalytics();
+            }
+        }
+
+        // --- LOCAL STORAGE DATA HANDLING ---
+        function loadLocalQuestionBank() {
+            const saved = localStorage.getItem('bioquery_steels_questions');
+            if (saved) {
+                activeQuestions = JSON.parse(saved);
+            } else {
+                activeQuestions = [...defaultQuestions];
+                localStorage.setItem('bioquery_steels_questions', JSON.stringify(activeQuestions));
+            }
+        }
+
+        function saveLocalQuestionBank() {
+            localStorage.setItem('bioquery_steels_questions', JSON.stringify(activeQuestions));
+        }
+
+        // --- TEACHER QUESTION BUILDER ENGINE ---
+        function handleNewQuestionSubmit(event) {
+            event.preventDefault();
+            const tag = document.getElementById('q-add-tag').value;
+            const text = document.getElementById('q-add-text').value;
+            const opt0 = document.getElementById('q-option-0').value;
+            const opt1 = document.getElementById('q-option-1').value;
+            const opt2 = document.getElementById('q-option-2').value;
+            const opt3 = document.getElementById('q-option-3').value;
+            const correctIndex = parseInt(document.querySelector('input[name="correct-option"]:checked').value);
+
+            const newQuestion = {
+                id: "q_" + Date.now(),
+                text: text,
+                options: [opt0, opt1, opt2, opt3],
+                correctIndex: correctIndex,
+                tag: tag
+            };
+
+            activeQuestions.push(newQuestion);
+            saveLocalQuestionBank();
+            updateAllVisuals();
+            
+            // Reset fields
+            document.getElementById('q-add-text').value = '';
+            document.getElementById('q-option-0').value = '';
+            document.getElementById('q-option-1').value = '';
+            document.getElementById('q-option-2').value = '';
+            document.getElementById('q-option-3').value = '';
+            
+            showAlert('success', 'Question Added!', `Published to pool for STEELS standard: ${tag}`);
+        }
+
+        function deleteQuestion(id) {
+            activeQuestions = activeQuestions.filter(q => q.id !== id);
+            saveLocalQuestionBank();
+            updateAllVisuals();
+            showAlert('success', 'Question Deleted', 'Question removed from the active STEELS pool.');
+        }
+
+        // --- RENDERING VIEWS DYNAMICALLY ---
+        function updateAllVisuals() {
+            document.getElementById('question-bank-count').textContent = `${activeQuestions.length} Questions`;
+            
+            const listContainer = document.getElementById('teacher-question-list');
+            listContainer.innerHTML = '';
+            
+            activeQuestions.forEach((q) => {
+                const spec = STEELS_REGISTRY[q.tag] || { desc: "Custom standard expectation context" };
+                const qCard = document.createElement('div');
+                qCard.className = "p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2 relative group hover:border-slate-300 transition shadow-sm";
+                qCard.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div class="flex flex-col space-y-1">
+                            <span class="px-2 py-0.5 text-[10px] w-fit font-black bg-slate-200 text-slate-800 rounded uppercase tracking-wider">${q.tag}</span>
+                            <span class="text-[10px] text-slate-400 italic">${spec.desc}</span>
+                        </div>
+                        <button onclick="deleteQuestion('${q.id}')" class="text-xs text-slate-400 hover:text-red-500 p-1 rounded transition opacity-0 group-hover:opacity-100 focus:opacity-100">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                    <p class="text-sm font-semibold text-slate-900">${q.text}</p>
+                    <div class="grid grid-cols-2 gap-2 pt-1 text-xs text-slate-500">
+                        ${q.options.map((opt, i) => `
+                            <div class="flex items-center space-x-1.5 ${i === q.correctIndex ? 'text-bio-700 font-bold' : ''}">
+                                <i class="fa-solid ${i === q.correctIndex ? 'fa-circle-check text-bio-600' : 'fa-circle-notch text-slate-300'}"></i>
+                                <span>${opt}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                listContainer.appendChild(qCard);
+            });
+        }
+
+        // --- GRAPHICS & ANALYTICS RENDERERS ---
+        function initializeStudentAnalytics() {
+            const ctx = document.getElementById('studentProgressionChart').getContext('2d');
+            
+            if (performanceChartInstance) {
+                performanceChartInstance.destroy();
+            }
+
+            const chartDates = quizHistory.map(h => h.date);
+            const chartData = quizHistory.map(h => Math.round((h.correct / h.total) * 100));
+
+            performanceChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: chartDates,
+                    datasets: [{
+                        label: 'STEELS Exam Readiness (%)',
+                        data: chartData,
+                        borderColor: '#16a34a',
+                        backgroundColor: 'rgba(22, 163, 74, 0.08)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.35,
+                        pointRadius: 5,
+                        pointBackgroundColor: '#15803d'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            min: 0,
+                            max: 100,
+                            ticks: { callback: value => value + '%' }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+
+            // Populate Student History Table
+            const historyBody = document.getElementById('student-history-tbody');
+            const historyCountBadge = document.getElementById('quiz-attempt-count');
+            historyBody.innerHTML = '';
+            
+            quizHistory.forEach(h => {
+                const row = document.createElement('tr');
+                row.className = "border-b border-slate-100 hover:bg-slate-50 transition text-xs md:text-sm";
+                const accuracy = Math.round((h.correct / h.total) * 100);
+                
+                row.innerHTML = `
+                    <td class="p-4 font-semibold text-slate-600">${h.date}</td>
+                    <td class="p-4 flex flex-wrap gap-1 max-w-sm">
+                        ${h.tags.map(tag => `<span class="px-1.5 py-0.5 text-[9px] font-bold bg-bio-50 text-bio-800 rounded border border-bio-100">${tag}</span>`).join('')}
+                    </td>
+                    <td class="p-4 text-center font-bold text-slate-700">${h.correct} / ${h.total}</td>
+                    <td class="p-4 text-right">
+                        <span class="font-black ${accuracy >= 80 ? 'text-bio-600' : accuracy >= 50 ? 'text-amber-500' : 'text-red-500'}">${accuracy}%</span>
+                    </td>
+                `;
+                historyBody.appendChild(row);
+            });
+            historyCountBadge.textContent = `${quizHistory.length} Completed`;
+
+            // Populate Module level average rates (Module A vs Module B)
+            const masteryContainer = document.getElementById('student-mastery-list');
+            masteryContainer.innerHTML = '';
+
+            const moduleAverages = {
+                "Module A: Cells & Ecosystems (Domains 1-3)": 88,
+                "Module B: Genetics & Evolution (Domains 1-3)": 91
+            };
+
+            Object.entries(moduleAverages).forEach(([modName, score]) => {
+                const item = document.createElement('div');
+                item.className = "space-y-1.5";
+                item.innerHTML = `
+                    <div class="flex justify-between text-xs font-semibold">
+                        <span class="text-slate-700 truncate max-w-[220px]">${modName}</span>
+                        <span class="font-bold ${score >= 80 ? 'text-bio-600' : 'text-amber-500'}">${score}% Mastery</span>
+                    </div>
+                    <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                        <div class="h-full rounded-full ${score >= 80 ? 'bg-bio-500' : 'bg-amber-400'}" style="width: ${score}%"></div>
+                    </div>
+                `;
+                masteryContainer.appendChild(item);
+            });
+
+            // Populate the detailed standard tracker list (Domains A-X)
+            const standardTrackerGrid = document.getElementById('standards-progress-grid');
+            standardTrackerGrid.innerHTML = '';
+
+            Object.entries(STEELS_REGISTRY).forEach(([code, value]) => {
+                const bubble = document.createElement('div');
+                bubble.className = "p-3 bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md transition duration-200 flex flex-col justify-between h-28";
+                
+                // Assign dynamic mock completion percentages for standards demo
+                const score = code === "3.1.9-12.A" ? 95 : code === "3.1.9-12.D" ? 90 : code === "3.1.9-12.E" ? 80 : code === "3.1.9-12.Q" ? 88 : code === "3.1.9-12.R" ? 95 : code === "3.1.9-12.W" ? 100 : code === "3.1.9-12.L" ? 80 : "Pending";
+                const isTested = score !== "Pending";
+
+                bubble.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <span class="px-1.5 py-0.5 text-[9px] font-bold bg-slate-100 text-slate-700 rounded">${code}</span>
+                        <span class="text-[8px] font-bold uppercase text-slate-400">${value.module}</span>
+                    </div>
+                    <p class="text-[9px] text-slate-400 font-semibold line-clamp-1 truncate">${value.domain}</p>
+                    <p class="text-[10px] text-slate-500 line-clamp-1 truncate hover:text-clip" title="${value.desc}">${value.desc}</p>
+                    <div class="flex justify-between items-center text-[10px] font-bold mt-1 border-t border-slate-50 pt-1">
+                        <span class="text-slate-400">Mastery Status:</span>
+                        <span class="${isTested ? (score >= 85 ? 'text-bio-600' : 'text-amber-500') : 'text-slate-400'}">${isTested ? `${score}%` : 'Not Assessed'}</span>
+                    </div>
+                `;
+                standardTrackerGrid.appendChild(bubble);
+            });
+        }
+
+        function populateClassroomAnalytics() {
+            document.getElementById('metric-student-count').textContent = classroomStats.length;
+            document.getElementById('metric-quiz-count').textContent = classroomStats.length * 2 + 1;
+            
+            const totalAvg = Math.round(classroomStats.reduce((acc, curr) => acc + curr.avg, 0) / classroomStats.length);
+            document.getElementById('metric-avg-score').textContent = `${totalAvg}%`;
+
+            const matrixBody = document.getElementById('classroom-matrix-tbody');
+            matrixBody.innerHTML = '';
+
+            classroomStats.forEach(std => {
+                const row = document.createElement('tr');
+                row.className = "border-b border-slate-100 text-xs md:text-sm text-center";
+                
+                row.innerHTML = `
+                    <td class="p-4 font-bold text-slate-800 text-left">${std.name}</td>
+                    <td class="p-4 bg-green-50/20"><span class="px-2 py-0.5 rounded-full font-bold text-xs ${getMatrixColorClass(std.m1d1)}">${std.m1d1}</span></td>
+                    <td class="p-4 bg-green-50/20"><span class="px-2 py-0.5 rounded-full font-bold text-xs ${getMatrixColorClass(std.m1d2)}">${std.m1d2}</span></td>
+                    <td class="p-4 bg-green-50/20"><span class="px-2 py-0.5 rounded-full font-bold text-xs ${getMatrixColorClass(std.m1d3)}">${std.m1d3}</span></td>
+                    <td class="p-4 bg-blue-50/20"><span class="px-2 py-0.5 rounded-full font-bold text-xs ${getMatrixColorClass(std.m2d1)}">${std.m2d1}</span></td>
+                    <td class="p-4 bg-blue-50/20"><span class="px-2 py-0.5 rounded-full font-bold text-xs ${getMatrixColorClass(std.m2d2)}">${std.m2d2}</span></td>
+                    <td class="p-4 bg-blue-50/20"><span class="px-2 py-0.5 rounded-full font-bold text-xs ${getMatrixColorClass(std.m2d3)}">${std.m2d3}</span></td>
+                    <td class="p-4 text-right font-black text-slate-900">${std.avg}%</td>
+                `;
+                matrixBody.appendChild(row);
+            });
+        }
+
+        function getMatrixColorClass(val) {
+            if (val === 'N/A') return 'bg-slate-100 text-slate-400';
+            const num = parseInt(val);
+            if (num >= 90) return 'bg-green-100 text-green-800';
+            if (num >= 75) return 'bg-blue-100 text-blue-800';
+            return 'bg-amber-100 text-amber-800';
+        }
+
+        // --- RUN QUIZ INTERACTIVE LOGIC ---
+        function openQuizConfig() {
+            const configContainer = document.getElementById('quiz-config-container');
+            const gameplayContainer = document.getElementById('quiz-gameplay-container');
+            const resultsContainer = document.getElementById('quiz-results-container');
+            const checkboxList = document.getElementById('quiz-tag-checkboxes');
+            
+            configContainer.classList.remove('hidden');
+            gameplayContainer.classList.add('hidden');
+            resultsContainer.classList.add('hidden');
+            
+            // Collect unique STEELS codes from published question pool
+            const tags = [...new Set(activeQuestions.map(q => q.tag))];
+            checkboxList.innerHTML = '';
+            
+            tags.forEach((tag) => {
+                const spec = STEELS_REGISTRY[tag] || { desc: "Life Science Assessment Unit" };
+                const label = document.createElement('label');
+                label.className = "flex items-center space-x-2 bg-slate-50 border border-slate-200 p-2.5 rounded-xl cursor-pointer hover:bg-slate-100 transition text-xs";
+                label.innerHTML = `
+                    <input type="checkbox" checked value="${tag}" class="quiz-standard-checkbox text-bio-600 focus:ring-bio-500 rounded">
+                    <div class="flex flex-col text-left">
+                        <span class="font-bold">${tag}</span>
+                        <span class="text-[10px] text-slate-400 italic">${spec.desc}</span>
+                    </div>
+                `;
+                checkboxList.appendChild(label);
+            });
+
+            document.getElementById('quiz-modal').classList.remove('hidden');
+        }
+
+        function closeQuizModal() {
+            document.getElementById('quiz-modal').classList.add('hidden');
+        }
+
+        function initiateQuiz() {
+            const selectedCheckboxes = document.querySelectorAll('.quiz-standard-checkbox:checked');
+            const selectedTags = Array.from(selectedCheckboxes).map(cb => cb.value);
+            const limit = parseInt(document.getElementById('quiz-limit').value);
+
+            if (selectedTags.length === 0) {
+                showAlert('error', 'Select Standard Focus', 'Please choose at least one STEELS standard target to test.');
+                return;
+            }
+
+            let pool = activeQuestions.filter(q => selectedTags.includes(q.tag));
+            
+            if (pool.length === 0) {
+                showAlert('error', 'Empty Question Criteria', 'No questions match the selected targets. Have your instructor publish additional items first!');
+                return;
+            }
+
+            pool.sort(() => 0.5 - Math.random());
+            currentQuizQuestions = pool.slice(0, limit);
+            currentQuizIndex = 0;
+            currentAnswers = [];
+
+            document.getElementById('quiz-config-container').classList.add('hidden');
+            document.getElementById('quiz-gameplay-container').classList.remove('hidden');
+            
+            renderQuizQuestion();
+        }
+
+        function renderQuizQuestion() {
+            const question = currentQuizQuestions[currentQuizIndex];
+            
+            selectedOptionIndex = null;
+            document.getElementById('btn-quiz-next').disabled = true;
+            document.getElementById('btn-quiz-next').classList.add('opacity-50', 'cursor-not-allowed');
+
+            document.getElementById('quiz-counter').textContent = `Question ${currentQuizIndex + 1} of ${currentQuizQuestions.length}`;
+            document.getElementById('quiz-tag-badge').textContent = `${question.tag}`;
+            document.getElementById('quiz-question-text').textContent = question.text;
+
+            const optionsContainer = document.getElementById('quiz-options-container');
+            optionsContainer.innerHTML = '';
+
+            question.options.forEach((opt, idx) => {
+                const optButton = document.createElement('button');
+                optButton.className = "w-full text-left p-4 rounded-xl border border-slate-200 hover:border-slate-300 hover:bg-slate-50 transition flex items-center space-x-3 text-sm font-semibold";
+                optButton.id = `opt-choice-${idx}`;
+                optButton.innerHTML = `
+                    <span class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center font-bold text-xs text-slate-500">${String.fromCharCode(65 + idx)}</span>
+                    <span class="flex-grow text-slate-700">${opt}</span>
+                `;
+                optButton.onclick = () => selectQuizOption(idx);
+                optionsContainer.appendChild(optButton);
+            });
+
+            const percent = ((currentQuizIndex) / currentQuizQuestions.length) * 100;
+            document.getElementById('quiz-progressbar').style.width = `${percent}%`;
+        }
+
+        function selectQuizOption(index) {
+            selectedOptionIndex = index;
+            
+            for (let i = 0; i < 4; i++) {
+                const el = document.getElementById(`opt-choice-${i}`);
+                if (el) {
+                    if (i === index) {
+                        el.className = "w-full text-left p-4 rounded-xl border-2 border-bio-500 bg-bio-50/50 flex items-center space-x-3 text-sm font-bold text-bio-900 transition shadow-sm";
+                    } else {
+                        el.className = "w-full text-left p-4 rounded-xl border border-slate-200 hover:border-slate-300 hover:bg-slate-50 transition flex items-center space-x-3 text-sm font-semibold";
+                    }
+                }
+            }
+
+            const nextBtn = document.getElementById('btn-quiz-next');
+            nextBtn.disabled = false;
+            nextBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+
+        function advanceQuiz() {
+            const question = currentQuizQuestions[currentQuizIndex];
+            const isCorrect = (selectedOptionIndex === question.correctIndex);
+            
+            currentAnswers.push({
+                questionId: question.id,
+                tag: question.tag,
+                correct: isCorrect
+            });
+
+            currentQuizIndex++;
+
+            if (currentQuizIndex < currentQuizQuestions.length) {
+                renderQuizQuestion();
+            } else {
+                renderQuizResults();
+            }
+        }
+
+        function renderQuizResults() {
+            document.getElementById('quiz-gameplay-container').classList.add('hidden');
+            document.getElementById('quiz-results-container').classList.remove('hidden');
+
+            const correctCount = currentAnswers.filter(ans => ans.correct).length;
+            const totalCount = currentAnswers.length;
+            const accuracy = Math.round((correctCount / totalCount) * 100);
+
+            document.getElementById('result-score').textContent = `${correctCount} / ${totalCount}`;
+            document.getElementById('result-accuracy').textContent = `${accuracy}%`;
+
+            const breakdownContainer = document.getElementById('result-topic-list');
+            breakdownContainer.innerHTML = '';
+
+            const metricsByTag = {};
+            currentAnswers.forEach(ans => {
+                if (!metricsByTag[ans.tag]) {
+                    metricsByTag[ans.tag] = { correct: 0, total: 0 };
+                }
+                metricsByTag[ans.tag].total++;
+                if (ans.correct) metricsByTag[ans.tag].correct++;
+            });
+
+            Object.entries(metricsByTag).forEach(([tag, item]) => {
+                const tagAcc = Math.round((item.correct / item.total) * 100);
+                const tagItem = document.createElement('div');
+                tagItem.className = "flex justify-between items-center text-xs p-2.5 bg-slate-50 border border-slate-100 rounded-lg shadow-xs";
+                tagItem.innerHTML = `
+                    <div class="flex flex-col text-left">
+                        <span class="font-bold text-slate-800">${tag}</span>
+                        <span class="text-[10px] text-slate-400 italic">${(STEELS_REGISTRY[tag] || {}).desc || ''}</span>
+                    </div>
+                    <span class="font-black ${tagAcc >= 80 ? 'text-bio-600' : 'text-amber-500'}">${item.correct}/${item.total} (${tagAcc}%)</span>
+                `;
+                breakdownContainer.appendChild(tagItem);
+            });
+
+            const today = new Date().toISOString().split('T')[0];
+            const uniqueTagsAttempted = [...new Set(currentAnswers.map(ans => ans.tag))];
+            
+            quizHistory.push({
+                date: today,
+                tags: uniqueTagsAttempted,
+                correct: correctCount,
+                total: totalCount
+            });
+
+            if (currentUser && currentUser.displayName) {
+                const existingIndex = classroomStats.findIndex(c => c.name === currentUser.displayName);
+                if (existingIndex !== -1) {
+                    classroomStats[existingIndex].avg = Math.round((classroomStats[existingIndex].avg + accuracy) / 2);
+                } else {
+                    classroomStats.push({
+                        name: currentUser.displayName,
+                        m1d1: accuracy >= 80 ? `${accuracy}%` : "70%",
+                        m1d2: "N/A",
+                        m1d3: "N/A",
+                        m2d1: "N/A",
+                        m2d2: "N/A",
+                        m2d3: "N/A",
+                        avg: accuracy
+                    });
+                }
+            }
+        }
+
+        function finishQuizSession() {
+            closeQuizModal();
+            initializeStudentAnalytics();
+        }
+
+        function abortQuiz() {
+            if (confirm("Stop quiz? Your progress on this attempt won't be saved.")) {
+                closeQuizModal();
+            }
+        }
+    </script>
+</body>
+</html>
